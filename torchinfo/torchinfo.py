@@ -440,9 +440,17 @@ def traverse_input_data(
         )
     elif isinstance(data, tuple) and hasattr(data, "_fields"):  # Named tuple
         aggregate = aggregate_fn(data)
-        result = aggregate(
-            *(traverse_input_data(d, action_fn, aggregate_fn) for d in data)
-        )
+        # One of two cases:
+        # 1. aggregate is `type` (for setting device) in which case we need the *
+        # 2. aggregate is `sum` (for getting total memory) in which case we get rid of the *.
+        if aggregate is sum:
+            result = aggregate(
+                traverse_input_data(d, action_fn, aggregate_fn) for d in data
+            )
+        else:
+            result = aggregate(
+                *(traverse_input_data(d, action_fn, aggregate_fn) for d in data)
+            )
     elif isinstance(data, Iterable) and not isinstance(data, str):
         aggregate = aggregate_fn(data)
         result = aggregate(
